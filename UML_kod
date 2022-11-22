@@ -1,0 +1,34 @@
+@startuml
+class Product{
++name: str
++price: float
++__eq__(): 
++__hash__(): int
+}
+
+class Server{
++get_entries(int): List[Product]
+#_get_product
+}
+
+class ListServer{
+-products: List[Product]
+#get_products
+}
+
+class MapServer{
+-products: List[Product]
+#get_products
+}
+
+class Client {
++get_total_price(int): float
+}
+
+MapServer --|> Server
+ListServer --|> Server
+MapServer o-- Product
+ListServer o-- Product
+Client o-- Server
+Product ..> ValueError
+@enduml
