@@ -56,7 +56,6 @@ class MapServer(Server):
     
     def _get_all_products(self,n_letters: int = 1):
         return list(self.products.values())
-        
  
  
 class Client:
