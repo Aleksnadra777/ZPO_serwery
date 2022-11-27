@@ -31,8 +31,7 @@ class TooManyProductsFoundError:
 #   (3) możliwość odwołania się do metody `get_entries(self, n_letters)` zwracającą listę produktów spełniających kryterium wyszukiwania
 class Server(ABC):
     n_max_returned_entries: int = 3
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__()
+    def __init__(self) -> None:
     def get_entries(self,n_letters: int = 1):
         pattern = '^[a-zA-Z]+[0-9]+$'
         entry = [prod for prod in self._get_all_products(n_letters) if re.fullmatch(pattern, prod.name)]
@@ -45,8 +44,7 @@ class Server(ABC):
 
 
 class ListServer(Server):
-    def __init__(self,products: List[Product], *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self,products: List[Product]) -> None:
         self.products: List[Product] = products
     def _get_all_products(self, n_letters: int = 1):
         return self.products
@@ -58,11 +56,16 @@ class MapServer(Server):
     
     def _get_all_products(self,n_letters: int = 1):
         return list(self.products.values())
-        
  
  
 class Client:
     # FIXME: klasa powinna posiadać metodę inicjalizacyjną przyjmującą obiekt reprezentujący serwer
+    def __init__(self, server: ServerType) -> None:
+        self.server: ServerType = server
  
     def get_total_price(self, n_letters: Optional[int]) -> Optional[float]:
-        raise NotImplementedError()
+        try:    
+            entries = self.server.get_entries(n_letters)
+            return sum([entry.price for entry in entries])
+        except:
+            None
