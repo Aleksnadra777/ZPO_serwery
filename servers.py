@@ -1,0 +1,79 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+from abc import ABC, abstractmethod
+from typing import Optional, List, Dict, TypeVar
+import re
+ 
+class Product:
+    # FIXME: klasa powinna posiadać metodę inicjalizacyjną przyjmującą argumenty wyrażające nazwę produktu (typu str) i jego cenę (typu float) -- w takiej kolejności -- i ustawiającą atrybuty `name` (typu str) oraz `price` (typu float)
+    def __init__ (self,name, price):
+        pattern = '^[a-zA-Z]+[0-9]+$'
+        if (re.fullmatch (pattern, name) is None) or (price <0):
+            raise ValueError('nie wyszło')
+
+        self.name= name
+        self.price= price
+    def __eq__(self, other):
+        return self.name, self.price == other.name, other.price  # FIXME: zwróć odpowiednią wartość
+ 
+    def __hash__(self):
+        return hash((self.name, self.price))
+
+ 
+class TooManyProductsFoundError(Exception):
+    # Reprezentuje wyjątek związany ze znalezieniem zbyt dużej liczby produktów.
+    pass
+ 
+ 
+# FIXME: Każada z poniższych klas serwerów powinna posiadać:
+#   (1) metodę inicjalizacyjną przyjmującą listę obiektów typu `Product` i ustawiającą atrybut `products` zgodnie z typem reprezentacji produktów na danym serwerze,
+#   (2) możliwość odwołania się do atrybutu klasowego `n_max_returned_entries` (typu int) wyrażający maksymalną dopuszczalną liczbę wyników wyszukiwania,
+#   (3) możliwość odwołania się do metody `get_entries(self, n_letters)` zwracającą listę produktów spełniających kryterium wyszukiwania
+class Server(ABC):
+    n_max_returned_entries: int = 3
+
+    def __init__(self) -> None:
+        super().__init__()
+    
+    def get_entries(self,n_letters: int = 1):
+        pattern = '^[a-zA-Z]+[0-9]+$'
+        entry = [prod for prod in self._get_all_products(n_letters) if re.fullmatch(pattern, prod.name)]
+        if len(entry) > Server.n_max_returned_entries:
+            raise TooManyProductsFoundError
+        return sorted(entry, key = lambda entries: entries.price)
+    
+    @abstractmethod
+    def _get_all_products(self,n_letters: int = 1):
+        raise NotImplementedError
+
+ServerType = TypeVar('ServerType', bound=Server)
+
+class ListServer(Server):
+    def __init__(self,products: List[Product]) -> None:
+        self.products: List[Product] = products
+    def _get_all_products(self, n_letters: int = 1):
+        return self.products
+ 
+ 
+class MapServer(Server):
+    def __init__(self, products: List[Product]):
+        self.products: Dict[str, Product] = {prod.name: prod for prod in products}
+    
+    def _get_all_products(self,n_letters: int = 1):
+        return list(self.products.values())
+
+ 
+class Client:
+    # FIXME: klasa powinna posiadać metodę inicjalizacyjną przyjmującą obiekt reprezentujący serwer
+    def __init__(self, server: ServerType) -> None:
+        self.server: ServerType = server
+ 
+    def get_total_price(self, n_letters: Optional[int]) -> float:
+        try:
+            if n_letters is None:
+                entries = self.server.get_entries()
+            else:
+                entries = self.server.get_entries(n_letters)
+            return sum([entry.price for entry in entries])
+        except TooManyProductsFoundError:
+            return None
